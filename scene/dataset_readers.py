@@ -23,6 +23,7 @@ from plyfile import PlyData, PlyElement
 from utils.sh_utils import SH2RGB
 from scene.gaussian_model import BasicPointCloud
 import open3d as o3d
+from utils.desk_compare import load_split_manifest, partition_cameras
 
 class CameraInfo(NamedTuple):
     uid: int
@@ -159,7 +160,7 @@ def storePly(path, xyz, rgb):
     ply_data = PlyData([vertex_element])
     ply_data.write(path)
 
-def readColmapSceneInfo(path, images, eval, llffhold=8, sky_seg=False, load_normal=False, load_depth=False):
+def readColmapSceneInfo(path, images, eval, llffhold=8, split_manifest="", sky_seg=False, load_normal=False, load_depth=False):
     try:
         cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.bin")
         cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.bin")
@@ -177,14 +178,15 @@ def readColmapSceneInfo(path, images, eval, llffhold=8, sky_seg=False, load_norm
                                            sky_seg=sky_seg, load_normal=load_normal, load_depth=load_depth)
     cam_infos = sorted(cam_infos_unsorted.copy(), key = lambda x : x.image_name)
 
-    if eval:
+    split_payload = load_split_manifest(split_manifest)
+    if split_payload is not None:
+        train_cam_infos, test_cam_infos = partition_cameras(cam_infos, split_payload, eval, llffhold)
+    elif eval:
         train_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % llffhold != 0]
         test_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % llffhold == 0]
         if 'waymo' in path:
             train_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % llffhold != (llffhold-1)]
             test_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % llffhold == (llffhold-1)]
-        # train_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % (llffhold * 3) >= 3]
-        # test_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % (llffhold * 3) < 3]
     else:
         train_cam_infos = cam_infos
         test_cam_infos = []

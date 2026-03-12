@@ -50,6 +50,10 @@ class ModelParams(ParamGroup):
         self._source_path = ""
         self._model_path = ""
         self._images = "images"
+        self.split_manifest = ""
+        self.monitor_split = "test"
+        self.monitor_view_name = ""
+        self.monitor_index = 0
         self._resolution = -1
         self._white_background = False
         self.data_device = "cuda"
