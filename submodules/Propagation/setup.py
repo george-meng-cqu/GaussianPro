@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+from typing import List
 
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
@@ -7,7 +8,7 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 ROOT = osp.dirname(osp.abspath(__file__))
 
 
-def _nvcc_arch_flags() -> list[str]:
+def _nvcc_arch_flags() -> List[str]:
     arch_list = os.environ.get("GAUSSIANPRO_CUDA_ARCH_LIST", "86;89")
     flags: list[str] = ["-O3"]
     for arch in arch_list.split(";"):
