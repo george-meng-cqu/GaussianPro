@@ -2,6 +2,7 @@ import csv
 import json
 import re
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import torch
@@ -22,7 +23,7 @@ def load_split_manifest(path: str):
     return json.loads(manifest_path.read_text(encoding="utf-8"))
 
 
-def _split_names(payload: dict, split: str) -> list[str]:
+def _split_names(payload: Dict[str, Any], split: str) -> List[str]:
     candidates = [
         payload.get(f"{split}_image_names"),
         payload.get(f"{split}_images"),
@@ -35,7 +36,7 @@ def _split_names(payload: dict, split: str) -> list[str]:
     return []
 
 
-def partition_cameras(cam_infos, manifest: dict | None, eval_enabled: bool, llffhold: int):
+def partition_cameras(cam_infos, manifest: Optional[Dict[str, Any]], eval_enabled: bool, llffhold: int):
     if manifest is None:
         if eval_enabled:
             train = [cam for idx, cam in enumerate(cam_infos) if idx % llffhold != 0]
@@ -65,7 +66,7 @@ def partition_cameras(cam_infos, manifest: dict | None, eval_enabled: bool, llff
     return train, test
 
 
-def resolve_monitor_target(manifest: dict | None, split: str, requested_index: int, requested_view_name: str, cameras):
+def resolve_monitor_target(manifest: Optional[Dict[str, Any]], split: str, requested_index: int, requested_view_name: str, cameras):
     camera_list = list(cameras)
     if not camera_list:
         raise ValueError(f"Cannot resolve monitor view from empty `{split}` split.")
@@ -110,7 +111,7 @@ def save_tensor_image(tensor: torch.Tensor, output_path: Path):
     Image.fromarray(np.clip(image * 255.0, 0, 255).astype(np.uint8)).save(output_path)
 
 
-def append_eval_history(model_path: str, record: dict):
+def append_eval_history(model_path: str, record: Dict[str, Any]):
     monitor_root = Path(model_path) / "monitor"
     monitor_root.mkdir(parents=True, exist_ok=True)
     jsonl_path = monitor_root / "eval_history.jsonl"
@@ -127,7 +128,7 @@ def append_eval_history(model_path: str, record: dict):
         writer.writerow({name: record.get(name) for name in fieldnames})
 
 
-def write_metrics_summary(model_path: str, payload: dict):
+def write_metrics_summary(model_path: str, payload: Dict[str, Any]):
     metrics_path = Path(model_path) / "metrics.json"
     normalized = dict(payload)
     if "l1" in normalized and "test_l1" not in normalized:
